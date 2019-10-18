@@ -443,3 +443,19 @@ func (c *Client) CurrentUserCreatePlaylist(playlistName, description string, col
 
 	return &p, err
 }
+
+// CurrentUserUnfollowPlaylist removes the current user as a follower of a playlist.
+// Unfollowing a publicly followed playlist requires ScopePlaylistModifyPublic.
+// Unfolowing a privately followed playlist requies ScopePlaylistModifyPrivate.
+func (c *Client) CurrentUserUnfollowPlaylist(playlist ID) error {
+	spotifyURL := fmt.Sprintf("%splaylists/%s/followers", c.baseURL, string(playlist))
+	req, err := http.NewRequest("DELETE", spotifyURL, nil)
+	if err != nil {
+		return err
+	}
+	err = c.execute(req, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}

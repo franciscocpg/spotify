@@ -1,6 +1,8 @@
 package spotify
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -399,4 +401,45 @@ func (c *Client) CurrentUsersTopTracksOpt(opt *Options) (*FullTrackPage, error) 
 // is medium_term.
 func (c *Client) CurrentUsersTopTracks() (*FullTrackPage, error) {
 	return c.CurrentUsersTopTracksOpt(nil)
+}
+
+// CurrentUserCreatePlaylist creates a playlist for the current Spotify user.
+// The playlist will be empty until you add tracks to it.
+// The playlistName does not need to be unique - a user can have
+// several playlists with the same name.
+//
+// Creating a public playlist for a user requires ScopePlaylistModifyPublic;
+// creating a private playlist requires ScopePlaylistModifyPrivate.
+//
+// On success, the newly created playlist is returned.
+func (c *Client) CurrentUserCreatePlaylist(playlistName, description string, collaborative, public bool) (*FullPlaylist, error) {
+	spotifyURL := fmt.Sprintf("%sme/playlists", c.baseURL)
+	body := struct {
+		Name          string `json:"name"`
+		Public        bool   `json:"public"`
+		Description   string `json:"description"`
+		Collaborative bool   `json:"collaborative"`
+	}{
+		playlistName,
+		public,
+		description,
+		collaborative,
+	}
+	bodyJSON, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("POST", spotifyURL, bytes.NewReader(bodyJSON))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	var p FullPlaylist
+	err = c.execute(req, &p, http.StatusCreated)
+	if err != nil {
+		return nil, err
+	}
+
+	return &p, err
 }

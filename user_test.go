@@ -442,3 +442,25 @@ func TestCurrentUsersTopTracks(t *testing.T) {
 		t.Errorf("Wrong ISRC: want %s, got %s\n", isrc, i)
 	}
 }
+
+func TestCurrentUserCreatePlaylist(t *testing.T) {
+	client, server := testClientString(http.StatusCreated, newPlaylist)
+	defer server.Close()
+
+	p, err := client.CurrentUserCreatePlaylist("A New Playlist", "Test Description", false, false)
+	if err != nil {
+		t.Error(err)
+	}
+	if p.IsPublic {
+		t.Error("Expected private playlist, got public")
+	}
+	if p.Name != "A New Playlist" {
+		t.Errorf("Expected 'A New Playlist', got '%s'\n", p.Name)
+	}
+	if p.Description != "Test Description" {
+		t.Errorf("Expected 'Test Description', got '%s'\n", p.Description)
+	}
+	if p.Tracks.Total != 0 {
+		t.Error("Expected new playlist to be empty")
+	}
+}

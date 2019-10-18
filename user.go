@@ -444,6 +444,42 @@ func (c *Client) CurrentUserCreatePlaylist(playlistName, description string, col
 	return &p, err
 }
 
+// CurrentUserFollowPlaylist adds the current user as a follower of the specified
+// playlist.  Any playlist can be followed, regardless of its private/public
+// status, as long as you know the owner and playlist ID.
+//
+// If the public argument is true, then the playlist will be included in the
+// user's public playlists.  To be able to follow playlists privately, the user
+// must have granted the ScopePlaylistModifyPrivate scope.  The
+// ScopePlaylistModifyPublic scope is required to follow playlists publicly.
+func (c *Client) CurrentUserFollowPlaylist(playlist ID, public bool) error {
+	spotifyURL := fmt.Sprintf("%splaylists/%s/followers", c.baseURL, string(playlist))
+
+	body := struct {
+		Public bool `json:"public"`
+	}{
+		public,
+	}
+
+	bodyJSON, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("PUT", spotifyURL, bytes.NewReader(bodyJSON))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	err = c.execute(req, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // CurrentUserUnfollowPlaylist removes the current user as a follower of a playlist.
 // Unfollowing a publicly followed playlist requires ScopePlaylistModifyPublic.
 // Unfolowing a privately followed playlist requies ScopePlaylistModifyPrivate.
